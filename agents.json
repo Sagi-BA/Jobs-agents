@@ -18,6 +18,6 @@
     "name": "avodata",
     "url": "https://avodata.labor.gov.il/occupations?q={prompt}",
     "start_text": "results-wrapper-TaasukaCatalog",
-    "end_text": "bottom-div"
+    "end_text": "second-section"
   }
 ]

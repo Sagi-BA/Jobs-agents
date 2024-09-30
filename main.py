@@ -1,8 +1,13 @@
 import os
+import requests
 import streamlit as st
+import docx2txt
+import PyPDF2
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+import langdetect
+
 
 # בדיקה אם אנחנו בסביבת Streamlit Cloud
 STREAMLIT_DEPLOYMENT = os.getenv('STREAMLIT_DEPLOYMENT', 'false').lower() == 'true'
@@ -48,6 +53,26 @@ from openpyxl.styles import Font, Alignment
 import base64
 
 load_dotenv()
+
+def load_resume(file):
+    file_type = file.type
+    if file_type == "application/pdf":
+        return read_pdf(file)
+    elif file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return read_docx(file)
+    else:
+        st.error("פורמט קובץ לא נתמך. אנא העלה קובץ PDF או Word.")
+        return None
+
+def read_pdf(file):
+    pdf_reader = PyPDF2.PdfReader(io.BytesIO(file.getvalue()))
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text
+
+def read_docx(file):
+    return docx2txt.process(io.BytesIO(file.getvalue()))
 
 # טעינת הסוכנים מקובץ JSON
 with open('agents.json', 'r', encoding='utf-8') as file:
@@ -238,6 +263,59 @@ def get_table_download_link(df):
     b64 = base64.b64encode(processed_data).decode()
     return f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="job_listings.xlsx">Download Excel file</a>'
 
+def detect_language(text):
+    try:
+        return langdetect.detect(text)
+    except:
+        return 'en'  # ברירת מחדל לאנגלית אם הזיהוי נכשל
+
+def analyze_jobs_with_groq(resume, jobs, language):
+    api_key = os.getenv('GROQ_API_KEY')
+    if not api_key:
+        st.error("GROQ API key is missing. Please set it in your .env file.")
+        return []
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    prompt = f"""
+    Given the following resume and list of job postings, analyze and rank the top 5 jobs that best match the candidate's skills and experience. For each job, provide a brief explanation of why it's a good match.
+
+    The resume is in {language} language. Please provide your response in {language}.
+
+    Resume:
+    {resume}
+
+    Job Postings:
+    {json.dumps(jobs, ensure_ascii=False)}
+
+    Please provide the results in the following format, using {language}:
+    1. Job Title (Company Name)
+       Explanation: [Brief explanation of why this job is a good match]
+
+    2. Job Title (Company Name)
+       Explanation: [Brief explanation of why this job is a good match]
+
+    ... and so on for the top 5 matches.
+    """
+
+    data = {
+        "model": "mixtral-8x7b-32768",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.5,
+        "max_tokens": 1000
+    }
+
+    response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data)
+    
+    if response.status_code == 200:
+        return response.json()['choices'][0]['message']['content']
+    else:
+        st.error(f"Error from Groq API: {response.text}")
+        return []
+    
 def main():
     st.set_page_config(layout="wide", page_title="סוכן משרות מקצועי", page_icon="🔍")
 
@@ -263,8 +341,20 @@ def main():
 
     selected_agents = st.multiselect("בחר סוכנים", [agent['name'] for agent in agents], default=[agent['name'] for agent in agents])
     prompt = st.text_input("הכנס מילות חיפוש", value="מנהל שיווק ומכירות")
+    
+    uploaded_file = st.file_uploader("העלה קורות חיים (PDF או Word)", type=["pdf", "docx"])
+    
+    # הוספת אפשרות בחירת שפה
+    language_options = {
+        "עברית": "he",
+        "אנגלית": "en",
+        "רוסית": "ru",
+        "ערבית": "ar",
+        "צרפתית": "fr"
+    }
+    selected_language = st.selectbox("בחר את השפה שבה אתה רוצה לקבל תשובה", options=list(language_options.keys()))
 
-    if st.button("חפש משרות"):
+    if st.button("חפש משרות שמתאימות לקורות חיים שלי"):
         if not selected_agents:
             st.warning("אנא בחר לפחות סוכן אחד")
             return
@@ -308,6 +398,16 @@ def main():
             df = pd.DataFrame(all_jobs)
             st.write("תוצאות החיפוש:")
             st.dataframe(df)
+
+            if uploaded_file is not None:
+                resume_content = load_resume(uploaded_file)
+                if resume_content:
+                    status_text.text("מנתח התאמה לקורות החיים...")
+                    # שימוש בשפה שנבחרה
+                    matching_results = analyze_jobs_with_groq(resume_content, all_jobs, language_options[selected_language])
+                    st.subheader("המשרות המתאימות ביותר לקורות החיים שלך:")
+                    st.write(matching_results)
+            
         except Exception as e:
             st.error(f"אירעה שגיאה ביצירת טבלת הנתונים: {str(e)}")
             st.write("Debug: תוכן all_jobs:")

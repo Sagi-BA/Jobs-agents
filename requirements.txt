@@ -6,3 +6,8 @@ beautifulsoup4
 tenacity
 selenium
 webdriver-manager
+# groq
+requests
+PyPDF2
+docx2txt
+langdetect
