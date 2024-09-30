@@ -1,23 +1,31 @@
-import io
-
 import streamlit as st
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
+from webdriver_manager.firefox import GeckoDriverManager
+import os
+
+
+@st.cache_resource
+def get_driver():
+    os.system('sbase install geckodriver')
+    os.system('ln -s /home/appuser/venv/lib/python3.7/site-packages/seleniumbase/drivers/geckodriver /home/appuser/venv/bin/geckodriver')
+    
+    options = Options()
+    options.add_argument("--headless")
+    
+    return webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=options)
+
+# Rest of your imports
+import io
+import pandas as pd
 from dotenv import load_dotenv
 import urllib.parse
-from tenacity import retry, stop_after_attempt, wait_exponential
 from bs4 import BeautifulSoup
 import json
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import base64
-import pandas as pd
-import pandas as pd_dataframe
 
 load_dotenv()
 
@@ -32,8 +40,9 @@ with open('agents.json', 'r', encoding='utf-8') as file:
 # if not drushim_agent:
 #     raise ValueError("Drushim agent not found in agents.json")
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+
 def request_url(agent, prompt, page=1):
+    driver = get_driver()
     base_url = agent['url']
     start_text = agent['start_text']
     end_text = agent['end_text']
@@ -43,23 +52,9 @@ def request_url(agent, prompt, page=1):
         url = base_url.format(prompt=encoded_prompt, page=page)
     else:
         url = base_url.format(prompt=encoded_prompt)
-
-    
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
         driver.get(url)
-        
-        # Wait for the content to load
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
-        
         content = driver.page_source
         
         start_index = content.find(start_text)
@@ -69,15 +64,11 @@ def request_url(agent, prompt, page=1):
             extracted_content = content[start_index:end_index + len(end_text)]
             return extracted_content
         else:
-            print(f"Agent: {agent['name']}")
-            print("Could not find the specified start and end text in the content.")
-            print(f"Start text: {start_text}")
-            print(f"End text: {end_text}")
+            st.warning(f"לא נמצא תוכן מתאים עבור {agent['name']}")
             return None
 
     except Exception as e:
-        print(f"An error occurred: {e}")
-        print(f"URL attempted: {url}")
+        st.error(f"אירעה שגיאה בעת שליפת נתונים מ-{agent['name']}: {str(e)}")
         return None
     
     finally:

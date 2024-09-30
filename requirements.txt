@@ -2,22 +2,7 @@ python-dotenv
 streamlit 
 pandas 
 openpyxl
-selenium
-webdriver_manager
 beautifulsoup4
 tenacity
-httpx
-
-# aiohttp #This is for telegram
-# requests
-# asyncio
-# groq
-# openai
-# PyMuPDF
-# numpy
-
-
-# pip install streamlit pandas openpyxl selenium webdriver_manager beautifulsoup4 tenacity
-
-
-
+seleniumbase
+webdriver-manager
