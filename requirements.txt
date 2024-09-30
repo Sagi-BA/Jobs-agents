@@ -5,4 +5,4 @@ openpyxl
 beautifulsoup4
 tenacity
 selenium
-webdriver-manager
+# webdriver-manager
