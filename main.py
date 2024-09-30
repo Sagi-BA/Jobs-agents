@@ -1,7 +1,14 @@
+import os
 import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+
+# ניסיון לייבא ChromeDriverManager, אם זה לא מצליח, נתעלם מהשגיאה
+try:
+    from webdriver_manager.chrome import ChromeDriverManager
+except ImportError:
+    ChromeDriverManager = None
 
 def create_driver():
     chrome_options = Options()
@@ -10,8 +17,16 @@ def create_driver():
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     
-    # שימוש בדרייבר המותקן במערכת
-    service = Service('/usr/bin/chromedriver')
+    # בדיקה אם אנחנו בסביבת פריסה (למשל, Streamlit Cloud)
+    if os.environ.get('STREAMLIT_DEPLOYMENT') == 'true':
+        service = Service('/usr/bin/chromedriver')
+    else:
+        # בסביבה מקומית, השתמש ב-ChromeDriverManager אם הוא זמין
+        if ChromeDriverManager:
+            service = Service(ChromeDriverManager().install())
+        else:
+            # אם ChromeDriverManager לא זמין, נסה להשתמש בדרייבר מקומי
+            service = Service('chromedriver')
     
     return webdriver.Chrome(service=service, options=chrome_options)
 
@@ -133,6 +148,45 @@ def extract_jobs_jobmaster(html_content, agent_name):
         jobs.append(job)
     
     return jobs
+def extract_jobs_avodata(html_content, agent_name):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    jobs = []
+    
+    for job_div in soup.find_all('div', class_='result-TaasukaCatalog'):
+        job = {'source': agent_name}
+        
+        # תפקיד (Title)
+        title = job_div.find('div', class_='title')
+        job['title'] = title.text.strip() if title else ''
+        
+        # תיאור (Description)
+        description = job_div.find('div', class_='sub-title')
+        job['description'] = description.text.strip() if description else ''
+        
+        # מידע נוסף
+        info_list = job_div.find('ul')
+        if info_list:
+            for li in info_list.find_all('li'):
+                if 'belongsToScope' in li.get('class', []):
+                    job['field'] = li.text.split(': ')[1] if ': ' in li.text else ''
+                elif 'salary' in li.get('class', []):
+                    job['salary'] = li.text.split(': ')[1] if ': ' in li.text else ''
+        
+        # לינק למשרה
+        link = job_div.find('a', class_='result-TaasukaCatalog')
+        job['link'] = link['href'] if link and 'href' in link.attrs else ''
+        
+        # שדות שאינם זמינים ב-Avodata
+        job['company'] = ''
+        job['location'] = ''
+        job['experience'] = ''
+        job['job_type'] = ''
+        job['posted'] = ''
+        
+        jobs.append(job)
+    
+    return jobs
+
 def create_excel_from_json(jobs):
     wb = Workbook()
     ws = wb.active
