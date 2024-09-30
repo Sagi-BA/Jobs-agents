@@ -6,6 +6,7 @@ selenium
 webdriver_manager
 beautifulsoup4
 tenacity
+httpx
 
 # aiohttp #This is for telegram
 # requests
