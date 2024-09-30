@@ -2,12 +2,7 @@ import io
 from turtle import pd
 import streamlit as st
 from dotenv import load_dotenv
-import os
-import requests
-import httpx
 import urllib.parse
-import socket
-import ssl
 from tenacity import retry, stop_after_attempt, wait_exponential
 from bs4 import BeautifulSoup
 import json
