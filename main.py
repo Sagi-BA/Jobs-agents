@@ -1,7 +1,6 @@
 import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 
 @st.cache_resource
@@ -12,9 +11,8 @@ def get_driver():
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     
-    # התקנת ChromeDriver
-    driver_path = ChromeDriverManager().install()
-    service = Service(driver_path)
+    # שימוש בדרייבר המותקן במערכת
+    service = Service('/usr/bin/chromedriver')
     
     return webdriver.Chrome(service=service, options=chrome_options)
 
@@ -31,16 +29,9 @@ import base64
 
 load_dotenv()
 
-# Read the existing agents.json file
-# Load agents from JSON file
+# טעינת הסוכנים מקובץ JSON
 with open('agents.json', 'r', encoding='utf-8') as file:
     agents = json.load(file)
-
-# # Find the Drushim agent
-# drushim_agent = next((agent for agent in agents if agent['name'] == 'drushim'), None)
-
-# if not drushim_agent:
-#     raise ValueError("Drushim agent not found in agents.json")
 
 def request_url(agent, prompt, page=1):
     driver = get_driver()
