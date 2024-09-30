@@ -2,19 +2,16 @@ import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
-from webdriver_manager.firefox import GeckoDriverManager
-import os
 
 
 @st.cache_resource
 def get_driver():
-    os.system('sbase install geckodriver')
-    os.system('ln -s /home/appuser/venv/lib/python3.7/site-packages/seleniumbase/drivers/geckodriver /home/appuser/venv/bin/geckodriver')
-    
     options = Options()
     options.add_argument("--headless")
     
-    return webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=options)
+    service = Service(executable_path='/usr/bin/geckodriver')
+    
+    return webdriver.Firefox(service=service, options=options)
 
 # Rest of your imports
 import io
@@ -39,7 +36,6 @@ with open('agents.json', 'r', encoding='utf-8') as file:
 
 # if not drushim_agent:
 #     raise ValueError("Drushim agent not found in agents.json")
-
 
 def request_url(agent, prompt, page=1):
     driver = get_driver()
@@ -70,9 +66,6 @@ def request_url(agent, prompt, page=1):
     except Exception as e:
         st.error(f"אירעה שגיאה בעת שליפת נתונים מ-{agent['name']}: {str(e)}")
         return None
-    
-    finally:
-        driver.quit()
 
 def extract_jobs_drushim(html_content, agent_name):
     soup = BeautifulSoup(html_content, 'html.parser')
