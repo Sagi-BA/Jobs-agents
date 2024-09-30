@@ -1,5 +1,7 @@
 import streamlit as st
-from seleniumwire import webdriver
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 
 @st.cache_resource
@@ -9,11 +11,9 @@ def get_driver():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--disable-features=NetworkService")
-    options.add_argument("--window-size=1920x1080")
-    options.add_argument("--disable-features=VizDisplayCompositor")
     
-    return webdriver.Chrome(options=options)
+    service = Service(ChromeDriverManager().install())
+    return webdriver.Chrome(service=service, options=options)
 
 # שאר הייבוא נשאר ללא שינוי
 import io
@@ -251,13 +251,6 @@ def main():
         status_text.text(f"נמצאו {len(all_jobs)} משרות בסך הכל.")
         progress_bar.progress(100)
 
-        # Debug information
-        # st.write(f"Debug: Number of jobs found: {len(all_jobs)}")
-        # st.write(f"Debug: Type of all_jobs: {type(all_jobs)}")
-        # if all_jobs:
-        #     st.write(f"Debug: Type of first job: {type(all_jobs[0])}")
-
-        # Create DataFrame with error handling
         try:
             df = pd.DataFrame(all_jobs)
             st.write("תוצאות החיפוש:")
