@@ -3,7 +3,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.core.utils import ChromeType
 
 @st.cache_resource
 def get_driver():
@@ -13,8 +12,8 @@ def get_driver():
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     
-    # התקנת ChromeDriver המתאים לגרסת Chrome המותקנת
-    driver_path = ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()
+    # התקנת ChromeDriver
+    driver_path = ChromeDriverManager().install()
     service = Service(driver_path)
     
     return webdriver.Chrome(service=service, options=chrome_options)

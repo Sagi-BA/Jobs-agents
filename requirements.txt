@@ -1,5 +1,5 @@
 python-dotenv
-streamlit
+streamlit>=1.20.0
 pandas 
 openpyxl
 beautifulsoup4
