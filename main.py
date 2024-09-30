@@ -1,19 +1,21 @@
 import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.service import Service
-
+from seleniumwire import webdriver
+from selenium.webdriver.chrome.options import Options
 
 @st.cache_resource
 def get_driver():
     options = Options()
     options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-features=NetworkService")
+    options.add_argument("--window-size=1920x1080")
+    options.add_argument("--disable-features=VizDisplayCompositor")
     
-    service = Service(executable_path='/usr/bin/geckodriver')
-    
-    return webdriver.Firefox(service=service, options=options)
+    return webdriver.Chrome(options=options)
 
-# Rest of your imports
+# שאר הייבוא נשאר ללא שינוי
 import io
 import pandas as pd
 from dotenv import load_dotenv
@@ -66,6 +68,8 @@ def request_url(agent, prompt, page=1):
     except Exception as e:
         st.error(f"אירעה שגיאה בעת שליפת נתונים מ-{agent['name']}: {str(e)}")
         return None
+    finally:
+        driver.quit()
 
 def extract_jobs_drushim(html_content, agent_name):
     soup = BeautifulSoup(html_content, 'html.parser')

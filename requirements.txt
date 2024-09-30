@@ -4,5 +4,4 @@ pandas
 openpyxl
 beautifulsoup4
 tenacity
-seleniumbase
-webdriver-manager
+selenium-wire
