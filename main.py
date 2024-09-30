@@ -3,19 +3,23 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.core.utils import ChromeType
 
 @st.cache_resource
 def get_driver():
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
     
-    service = Service(ChromeDriverManager().install())
-    return webdriver.Chrome(service=service, options=options)
+    # התקנת ChromeDriver המתאים לגרסת Chrome המותקנת
+    driver_path = ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()
+    service = Service(driver_path)
+    
+    return webdriver.Chrome(service=service, options=chrome_options)
 
-# שאר הייבוא נשאר ללא שינוי
+# שאר הקוד נשאר ללא שינוי
 import io
 import pandas as pd
 from dotenv import load_dotenv
