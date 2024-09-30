@@ -4,10 +4,16 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
-# ניסיון לייבא ChromeDriverManager, אם זה לא מצליח, נתעלם מהשגיאה
-try:
-    from webdriver_manager.chrome import ChromeDriverManager
-except ImportError:
+# בדיקה אם אנחנו בסביבת Streamlit Cloud
+STREAMLIT_DEPLOYMENT = os.getenv('STREAMLIT_DEPLOYMENT', 'false').lower() == 'true'
+
+# ניסיון לייבא ChromeDriverManager רק אם לא בסביבת Streamlit Cloud
+if not STREAMLIT_DEPLOYMENT:
+    try:
+        from webdriver_manager.chrome import ChromeDriverManager
+    except ImportError:
+        ChromeDriverManager = None
+else:
     ChromeDriverManager = None
 
 def create_driver():
@@ -17,11 +23,11 @@ def create_driver():
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     
-    # בדיקה אם אנחנו בסביבת פריסה (למשל, Streamlit Cloud)
-    if os.environ.get('STREAMLIT_DEPLOYMENT') == 'true':
+   # בדיקה אם אנחנו בסביבת ייצור או Streamlit Cloud
+    if os.getenv('ENVIRONMENT') == 'production' or STREAMLIT_DEPLOYMENT:
         service = Service('/usr/bin/chromedriver')
     else:
-        # בסביבה מקומית, השתמש ב-ChromeDriverManager אם הוא זמין
+        # בסביבת פיתוח, השתמש ב-ChromeDriverManager אם הוא זמין
         if ChromeDriverManager:
             service = Service(ChromeDriverManager().install())
         else:
