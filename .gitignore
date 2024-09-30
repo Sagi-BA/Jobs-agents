@@ -1,0 +1,9 @@
+*.code-workspace
+.env
+.venv
+# Ignore all __pycache__ directories
+**/__pycache__/
+/DATA
+
+job_listings.xlsx
+all_jobs.json

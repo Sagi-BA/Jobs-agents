@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "name": "drushim",
+    "url": "https://www.drushim.co.il/jobs/search/{prompt}",
+    "start_text": "משרות שעשויות לעניין אותך",
+    "end_text": "הצג לי משרות נוספות"
+  },
+  {
+    "id": 2,
+    "name": "jobmaster",
+    "url": "https://www.jobmaster.co.il/jobs/?q={prompt}&currPage={page}",
+    "start_text": "<article",
+    "end_text": "pagination"
+  }
+]
