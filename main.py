@@ -1,5 +1,5 @@
 import io
-from turtle import pd
+
 import streamlit as st
 from dotenv import load_dotenv
 import urllib.parse
@@ -16,6 +16,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import base64
+import pandas as pd
 import pandas as pd_dataframe
 
 load_dotenv()
@@ -270,7 +271,7 @@ def main():
 
         # Create DataFrame with error handling
         try:
-            df = pd_dataframe.DataFrame(all_jobs)
+            df = pd.DataFrame(all_jobs)
             st.write("תוצאות החיפוש:")
             st.dataframe(df)
         except Exception as e:
